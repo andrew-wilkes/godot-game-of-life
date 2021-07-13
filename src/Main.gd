@@ -53,7 +53,6 @@ func add_new_cell(pos, key):
 	var cell = $Cell.duplicate()
 	cell.position = pos
 	add_child(cell)
-	print("Add ", cell.name)
 	cell.show()
 	cells[key] = cell
 	grids[1][key] = true
@@ -75,11 +74,17 @@ func get_key(pos: Vector2) -> int:
 func start_stop():
 	if $Timer.is_stopped() and cells.size() > 0:
 		$Timer.start()
+		$c/Running.show()
+		$c/Stopped.hide()
 	else:
 		$Timer.stop()
+		$c/Running.hide()
+		$c/Stopped.show()
 
 func reset():
 	$Timer.stop()
+	$c/Running.hide()
+	$c/Stopped.show()
 	for key in cells.keys():
 		cells[key].queue_free()
 	grids[0].clear()

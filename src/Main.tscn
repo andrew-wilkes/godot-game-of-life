@@ -15,4 +15,27 @@ current = true
 modulate = Color( 0.0392157, 0.827451, 0.866667, 1 )
 texture = ExtResource( 2 )
 
+[node name="c" type="CanvasLayer" parent="."]
+
+[node name="Stopped" type="Label" parent="c"]
+margin_left = 6.29541
+margin_top = 7.61493
+margin_right = 50.2954
+margin_bottom = 21.6149
+text = "Stopped"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Running" type="Label" parent="c"]
+visible = false
+margin_left = 6.29541
+margin_top = 7.61493
+margin_right = 50.2954
+margin_bottom = 21.6149
+text = "Running"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
 [connection signal="timeout" from="Timer" to="." method="_on_Timer_timeout"]
