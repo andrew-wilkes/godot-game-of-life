@@ -53,6 +53,7 @@ func add_new_cell(pos, key):
 	var cell = $Cell.duplicate()
 	cell.position = pos
 	add_child(cell)
+	print("Add ", cell.name)
 	cell.show()
 	cells[key] = cell
 	grids[1][key] = true
@@ -122,7 +123,7 @@ func get_num_live_cells(key: int, first_pass = true):
 func add_new_cells():
 	for key in to_check:
 		var n = get_num_live_cells(key, false)
-		if n == 3:
+		if n == 3 and not grids[1].has(key):
 			add_new_cell(get_pos_from_key(key), key)
 	to_check = []
 
