@@ -9,11 +9,10 @@ script = ExtResource( 1 )
 [node name="Timer" type="Timer" parent="."]
 
 [node name="Camera2D" type="Camera2D" parent="."]
-anchor_mode = 0
 current = true
 
 [node name="Cell" type="Sprite" parent="."]
-modulate = Color( 0, 0.870588, 0.0352941, 1 )
+modulate = Color( 0.0392157, 0.827451, 0.866667, 1 )
 texture = ExtResource( 2 )
 
 [connection signal="timeout" from="Timer" to="." method="_on_Timer_timeout"]

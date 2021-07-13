@@ -2,13 +2,12 @@ extends Node2D
 
 var grids = [{}, {}]
 var cells = {}
+var alive_color: Color
+export(Color) var dead_color = Color(32)
 
 func _ready():
 	$Cell.hide()
-
-func _on_Timer_timeout():
-	grids.invert()
-	grids[1].clear()
+	alive_color = $Cell.modulate
 
 const ZOOM_STEP = 0.1
 
@@ -24,6 +23,12 @@ func _unhandled_input(event):
 			change_zoom(-ZOOM_STEP)
 	if event is InputEventMouseMotion and event.button_mask == BUTTON_MASK_MIDDLE:
 			move_camera(event.relative)
+	if event.is_action_pressed("ui_cancel"):
+		get_tree().quit()
+	if event.is_action_pressed("ui_accept"):
+		start_stop()
+	if event.is_action_pressed("ui_reset"):
+		reset()
 
 var zoom = 1.0
 
@@ -35,20 +40,91 @@ func move_camera(dv: Vector2):
 	$Camera2D.offset -= dv
 
 func place_cell(pos: Vector2):
+	pos = get_grid_pos(pos)
+	var key = get_key(pos)
+	if not cells.has(key):
+		add_new_cell(pos, key)
+
+func add_new_cell(pos, key):
+	# Adjust position
+	pos = pos * 32.0 + $Camera2D.offset - get_viewport_rect().size / 2
+	# Scale it
+	pos *= $Camera2D.zoom
 	var cell = $Cell.duplicate()
-	cell.position = get_snapped_pos(pos)
+	cell.position = pos
 	add_child(cell)
 	cell.show()
-	cells[get_key(cell.position)] = cell
+	cells[key] = cell
+	grids[1][key] = true
 
 func remove_cell(pos: Vector2):
-	var key = get_key(get_snapped_pos(pos))
+	var key = get_key(get_grid_pos(pos))
+	# Check if user clicked in occupied position
 	if cells.has(key):
 		cells[key].queue_free()
 		cells.erase(key)
+		grids[1].erase(key)
 
-func get_snapped_pos(pos: Vector2) -> Vector2:
-	return pos.snapped(Vector2(32, 32))
+func get_grid_pos(pos: Vector2) -> Vector2:
+	return pos.snapped(Vector2(32, 32)) / 32
 
 func get_key(pos: Vector2) -> int:
 	return int(pos.x) + 0x10000 * int(pos.y)
+
+func start_stop():
+	if $Timer.is_stopped() and cells.size() > 0:
+		$Timer.start()
+	else:
+		$Timer.stop()
+
+func reset():
+	$Timer.stop()
+	for key in cells.keys():
+		cells[key].queue_free()
+	grids[0].clear()
+	cells.clear()
+
+func _on_Timer_timeout():
+	grids.invert()
+	grids[1].clear()
+	regenerate()
+	add_new_cells()
+	update_cells()
+
+func regenerate():
+	for key in cells.keys():
+		var n = get_num_live_cells(key)
+		if grids[0][key]: # Alive
+			grids[1][key] = (n == 2 or n == 3)
+		else: # Dead
+			grids[1][key] = (n == 3)
+
+func update_cells():
+	for key in cells.keys():
+		cells[key].modulate = alive_color if grids[1][key] else dead_color
+
+var to_check = []
+
+func get_num_live_cells(key: int, first_pass = true):
+	var num_live_cells = 0
+	for y in [-1, 0, 1]:
+		for x in [-1, 0, 1]:
+			if x != 0 or y != 0:
+				var nkey = key + x + 0x10000 * y
+				if grids[0].has(nkey):
+					if grids[0][nkey]:
+						num_live_cells += 1
+				else:
+					if first_pass:
+						to_check.append(nkey)
+	return num_live_cells
+
+func add_new_cells():
+	for key in to_check:
+		var n = get_num_live_cells(key, false)
+		if n == 3:
+			add_new_cell(get_pos_from_key(key), key)
+	to_check = []
+
+func get_pos_from_key(key):
+	return Vector2(key % 0x10000, key / 0x10000)
