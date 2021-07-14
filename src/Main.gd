@@ -41,11 +41,14 @@ func move_camera(dv: Vector2):
 
 func place_cell(pos: Vector2):
 	# Convert mouse position to camera view coordinates
-	pos = pos + $Camera2D.offset / $Camera2D.zoom - get_viewport_rect().size / 2
+	pos = mouse_pos_to_cam_pos(pos)
 	var grid_pos = get_grid_pos(pos)
 	var key = get_key(grid_pos)
 	if not cells.has(key):
 		add_new_cell(grid_pos, key)
+
+func mouse_pos_to_cam_pos(pos):
+	return pos + $Camera2D.offset / $Camera2D.zoom - get_viewport_rect().size / 2
 
 func add_new_cell(grid_pos, key):
 	var pos = grid_pos * 32.0
@@ -57,7 +60,7 @@ func add_new_cell(grid_pos, key):
 	grids[1][key] = true
 
 func remove_cell(pos: Vector2):
-	var key = get_key(get_grid_pos(pos))
+	var key = get_key(get_grid_pos(mouse_pos_to_cam_pos(pos)))
 	# Check if user clicked in occupied position
 	if cells.has(key):
 		cells[key].queue_free()
