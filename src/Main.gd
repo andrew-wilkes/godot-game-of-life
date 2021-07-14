@@ -14,6 +14,7 @@ const ZOOM_STEP = 0.1
 func _unhandled_input(event):
 	if event is InputEventMouseButton:
 		if event.button_index == BUTTON_LEFT and event.pressed:
+			print(event.position, " ", $Camera2D.offset, " ", $Camera2D.zoom)
 			place_cell(event.position)
 		if event.button_index == BUTTON_RIGHT and event.pressed:
 			remove_cell(event.position)
@@ -40,16 +41,19 @@ func move_camera(dv: Vector2):
 	$Camera2D.offset -= dv
 
 func place_cell(pos: Vector2):
-	pos = get_grid_pos(pos)
-	var key = get_key(pos)
+	# Convert mouse position to camera view coordinates
+	pos = pos + $Camera2D.offset / $Camera2D.zoom - get_viewport_rect().size / 2
+	var grid_pos = get_grid_pos(pos)
+	var key = get_key(grid_pos)
 	if not cells.has(key):
-		add_new_cell(pos, key)
+		add_new_cell(grid_pos, key)
 
-func add_new_cell(pos, key):
+func add_new_cell(grid_pos, key, _by_player = true):
 	# Adjust position
-	pos = pos * 32.0 + $Camera2D.offset - get_viewport_rect().size / 2
+	var pos = grid_pos * 32.0
 	# Scale it
-	pos *= $Camera2D.zoom
+	#pos *= $Camera2D.zoom
+	print(pos)
 	var cell = $Cell.duplicate()
 	cell.position = pos
 	add_child(cell)
@@ -66,10 +70,11 @@ func remove_cell(pos: Vector2):
 		grids[1].erase(key)
 
 func get_grid_pos(pos: Vector2) -> Vector2:
-	return pos.snapped(Vector2(32, 32)) / 32
+	var pixels = 32.0 / $Camera2D.zoom.x
+	return pos.snapped(Vector2(pixels, pixels)) / pixels
 
 func get_key(pos: Vector2) -> int:
-	return int(pos.x) + 0x10000 * int(pos.y)
+	return 0x8000 + int(pos.x) + 0x10000 * (int(pos.y) + 0x8000) 
 
 func start_stop():
 	if $Timer.is_stopped() and cells.size() > 0:
@@ -129,7 +134,7 @@ func add_new_cells():
 	for key in to_check:
 		var n = get_num_live_cells(key, false)
 		if n == 3 and not grids[1].has(key):
-			add_new_cell(get_pos_from_key(key), key)
+			add_new_cell(get_pos_from_key(key), key, false)
 	to_check = []
 
 func get_pos_from_key(key):
