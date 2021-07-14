@@ -14,7 +14,6 @@ const ZOOM_STEP = 0.1
 func _unhandled_input(event):
 	if event is InputEventMouseButton:
 		if event.button_index == BUTTON_LEFT and event.pressed:
-			print(event.position, " ", $Camera2D.offset, " ", $Camera2D.zoom)
 			place_cell(event.position)
 		if event.button_index == BUTTON_RIGHT and event.pressed:
 			remove_cell(event.position)
@@ -48,12 +47,8 @@ func place_cell(pos: Vector2):
 	if not cells.has(key):
 		add_new_cell(grid_pos, key)
 
-func add_new_cell(grid_pos, key, _by_player = true):
-	# Adjust position
+func add_new_cell(grid_pos, key):
 	var pos = grid_pos * 32.0
-	# Scale it
-	#pos *= $Camera2D.zoom
-	print(pos)
 	var cell = $Cell.duplicate()
 	cell.position = pos
 	add_child(cell)
@@ -134,8 +129,8 @@ func add_new_cells():
 	for key in to_check:
 		var n = get_num_live_cells(key, false)
 		if n == 3 and not grids[1].has(key):
-			add_new_cell(get_pos_from_key(key), key, false)
+			add_new_cell(get_pos_from_key(key), key)
 	to_check = []
 
 func get_pos_from_key(key):
-	return Vector2(key % 0x10000, key / 0x10000)
+	return Vector2(key % 0x10000 - 0x8000, key / 0x10000 - 0x8000)
