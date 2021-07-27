@@ -93,12 +93,8 @@ func reset():
 func _on_Timer_timeout():
 	grids.invert()
 	grids[1].clear()
-	#print(grids[1])
-	#print(cells)
 	regenerate()
-	#print(grids[1])
 	add_new_cells()
-	#print(grids[1])
 	update_cells()
 
 func regenerate():
