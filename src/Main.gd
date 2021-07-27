@@ -43,24 +43,23 @@ func place_cell(pos: Vector2):
 	# Convert mouse position to camera view coordinates
 	pos = mouse_pos_to_cam_pos(pos)
 	var grid_pos = get_grid_pos(pos)
-	var key = get_key(grid_pos)
-	if not cells.has(key):
-		add_new_cell(grid_pos, key)
+	if not cells.has(grid_pos):
+		add_new_cell(grid_pos)
 
 func mouse_pos_to_cam_pos(pos):
 	return pos + $Camera2D.offset / $Camera2D.zoom - get_viewport_rect().size / 2
 
-func add_new_cell(grid_pos, key):
+func add_new_cell(grid_pos):
 	var pos = grid_pos * 32.0
 	var cell = $Cell.duplicate()
 	cell.position = pos
 	add_child(cell)
 	cell.show()
-	cells[key] = cell
-	grids[1][key] = true
+	cells[grid_pos] = cell
+	grids[1][grid_pos] = true
 
 func remove_cell(pos: Vector2):
-	var key = get_key(get_grid_pos(mouse_pos_to_cam_pos(pos)))
+	var key = get_grid_pos(mouse_pos_to_cam_pos(pos))
 	# Check if user clicked in occupied position
 	if cells.has(key):
 		cells[key].queue_free()
@@ -71,8 +70,6 @@ func get_grid_pos(pos: Vector2) -> Vector2:
 	var pixels = 32.0 / $Camera2D.zoom.x
 	return pos.snapped(Vector2(pixels, pixels)) / pixels
 
-func get_key(pos: Vector2) -> int:
-	return 0x8000 + int(pos.x) + 0x10000 * (int(pos.y) + 0x8000) 
 
 func start_stop():
 	if $Timer.is_stopped() and cells.size() > 0:
@@ -90,14 +87,18 @@ func reset():
 	$c/Stopped.show()
 	for key in cells.keys():
 		cells[key].queue_free()
-	grids[0].clear()
+	grids[1].clear()
 	cells.clear()
 
 func _on_Timer_timeout():
 	grids.invert()
 	grids[1].clear()
+	#print(grids[1])
+	#print(cells)
 	regenerate()
+	#print(grids[1])
 	add_new_cells()
+	#print(grids[1])
 	update_cells()
 
 func regenerate():
@@ -114,26 +115,23 @@ func update_cells():
 
 var to_check = []
 
-func get_num_live_cells(key: int, first_pass = true):
+func get_num_live_cells(pos: Vector2, first_pass = true):
 	var num_live_cells = 0
 	for y in [-1, 0, 1]:
 		for x in [-1, 0, 1]:
 			if x != 0 or y != 0:
-				var nkey = key + x + 0x10000 * y
-				if grids[0].has(nkey):
-					if grids[0][nkey]:
+				var new_pos = pos + Vector2(x, y)
+				if grids[0].has(new_pos):
+					if grids[0][new_pos]: # If alive
 						num_live_cells += 1
 				else:
 					if first_pass:
-						to_check.append(nkey)
+						to_check.append(new_pos)
 	return num_live_cells
 
 func add_new_cells():
-	for key in to_check:
-		var n = get_num_live_cells(key, false)
-		if n == 3 and not grids[1].has(key):
-			add_new_cell(get_pos_from_key(key), key)
+	for pos in to_check:
+		var n = get_num_live_cells(pos, false)
+		if n == 3 and not grids[1].has(pos):
+			add_new_cell(pos)
 	to_check = []
-
-func get_pos_from_key(key):
-	return Vector2(key % 0x10000 - 0x8000, key / 0x10000 - 0x8000)
